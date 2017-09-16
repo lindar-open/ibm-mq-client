@@ -4,7 +4,7 @@ import com.google.gson.reflect.TypeToken
 import com.lindar.wellrested.WellRestedRequest
 import com.lindar.wellrested.WellRestedRequestBuilder
 import com.lindar.wellrested.vo.Result
-import com.lindar.wellrested.vo.ResultFactory
+import com.lindar.wellrested.vo.ResultBuilder
 import com.lindar.wellrested.vo.WellRestedResponse
 import lindar.acolyte.util.UrlAcolyte
 import lindar.ibm.mq.client.vo.ErrorResponse
@@ -38,7 +38,7 @@ abstract class AbstractResource {
         val request = buildRequestFromResourcePath(resourcePath)
         val response = request.get().submit()
         return if (validResponse(response)) {
-            ResultFactory.successful(response.fromJson().castTo(clazz))
+            ResultBuilder.successful(response.fromJson().castTo(clazz))
         } else parseErrorResponse(response)
     }
 
@@ -46,7 +46,7 @@ abstract class AbstractResource {
         val request = buildRequestFromResourcePath(resourcePath)
         val response = request.get().submit()
         return if (validResponse(response)) {
-            ResultFactory.successful(response.fromJson().castToList(typeToken))
+            ResultBuilder.successful(response.fromJson().castToList(typeToken))
         } else parseErrorResponse(response)
     }
 
@@ -54,7 +54,7 @@ abstract class AbstractResource {
         val request = buildRequestFromResourcePath(resourcePath)
         val response = request.post().jsonContent(objectToPost).submit()
         return if (validResponse(response)) {
-            ResultFactory.successfulMsg("Posted successfully")
+            ResultBuilder.successfulWithoutData("Posted successfully")
         } else parseErrorResponse(response)
     }
 
@@ -62,7 +62,7 @@ abstract class AbstractResource {
         val request = buildRequestFromResourcePath(resourcePath)
         val response = request.post().jsonContent(objectToPost).submit()
         return if (validResponse(response)) {
-            ResultFactory.successful(response.fromJson().castTo(objectToPost::class.java))
+            ResultBuilder.successful(response.fromJson().castTo(objectToPost::class.java))
         } else parseErrorResponse(response)
     }
 
@@ -70,7 +70,7 @@ abstract class AbstractResource {
         val request = buildRequestFromResourcePath(resourcePath)
         val response = request.put().jsonContent(objectToPost).submit()
         return if (validResponse(response)) {
-            ResultFactory.successful(response.fromJson().castTo(objectToPost.javaClass))
+            ResultBuilder.successful(response.fromJson().castTo(objectToPost.javaClass))
         } else parseErrorResponse(response)
     }
 
@@ -78,7 +78,7 @@ abstract class AbstractResource {
         val request = buildRequestFromResourcePath(resourcePath)
         val response = request.delete().submit()
         return if (validResponse(response)) {
-            ResultFactory.successfulMsg("Deleted successfully")
+            ResultBuilder.successfulWithoutData("Deleted successfully")
         } else parseErrorResponse(response)
     }
 
@@ -89,9 +89,9 @@ abstract class AbstractResource {
     private fun <T> parseErrorResponse(response: WellRestedResponse): Result<T> {
         val errorResponse = response.fromJson().castTo(ErrorResponse::class.java)
         if (errorResponse.errorMessage.isBlank()) {
-            return ResultFactory.failed("Unknown Error", "UNKNOWN_ERROR")
+            return ResultBuilder.failed<T>().msg("Unknown Error").code("UNKNOWN_ERROR").buildAndIgnoreData()
         }
-        return ResultFactory.failed(errorResponse.errorMessage, errorResponse.errorCode)
+        return ResultBuilder.failed<T>().msg(errorResponse.errorMessage).code(errorResponse.errorCode).buildAndIgnoreData()
     }
 
 }
